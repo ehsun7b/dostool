@@ -38,6 +38,7 @@ public class DOSTool implements Observer {
     this.threadsOfFinder = 10;
     this.threadsOfAttack = 100;
     successfulAttacks = 0;
+    failedAttacks = 0;
   }
 
   public void findResources() {
