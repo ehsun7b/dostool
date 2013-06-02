@@ -275,4 +275,5 @@ public class ResourceFinder extends Observable implements Runnable {
 
     return newHost.equalsIgnoreCase(host);
   }
+  
 }

