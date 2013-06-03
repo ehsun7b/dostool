@@ -2,13 +2,11 @@ package com.ehsunbehravesh.dostool;
 
 import com.ehsunbehravesh.dostool.log.LogUtil;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -62,7 +60,7 @@ public class DOSTool implements Observer {
         }
       }
     } catch (Exception ex) {
-      logger.log(Level.WARNING, "Loading resource file failed!");
+      logger.log(Level.INFO, "Loading resource file failed!");
       resourcesLoaded = false;
     }
 
